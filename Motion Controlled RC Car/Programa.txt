@@ -1,0 +1,195 @@
+#include <stm32f10x.h>//definición de los nombres
+
+int x;
+int y;
+int z;
+int n;
+
+//THERE SHOULD BE A DELAY BETWEEN TIMER ON AND START OF CONVERSION
+//resolution (12 bits) (Vref + aprox 3 Volts) (Vref- = 0 I suppose)
+//talves aumentando la velocidad de actualizacion de la conversion...
+
+int main(void)
+{
+
+	n = 0;
+
+	RCC->APB2ENR |= (1<<9)| (1<<2) | (1<<4) ;//Reset and clock control: Del registro RCC se accede a la parte APB2ENR
+	GPIOA->CRL = 0; //PUERTO A, que tiene el ADC, configurado como INPUT, ANALOGO
+	GPIOC->CRL = 0x22222222;//PUERTO C LOW, config en general purpose output, max speed 2MHz
+	//GPIOC->CRH = 0x88888888;//PUERTO C HIGH, config en general purpose output, max speed 2MHz
+
+	NVIC_EnableIRQ(ADC1_IRQn);
+
+	ADC1->CR1 = (1<<5); //habilita EOC, que nos permite saber que acabo la conversion
+	ADC1->SMPR2 = 0x000; //sample time for each channel set to 239.5 cycles (nou enteeandou)
+
+	ADC1->CR2 = 0x1; //ADC ON , single mode(cont=1),right alignment (bit 11)
+	ADC1->SQR1 = 0;	// total number of conversions (one conversion is a 0 in the bits #20-23), other bits are order of the conversion of channel, from last to first going down
+	ADC1->SQR2 = 0; // no channels converted in this range (from 12th to 7th)
+
+	GPIOC->ODR = 0x0;
+
+
+
+
+
+    while(1)
+    {
+    	ADC1->CR2 = 0x1; //ADC ON , single mode(cont=0),right alignment (bit 11)
+    	ADC1->SQR3 = 0x1; // in the first 5 bits you put the channel # of the channel you want to be converted first, in this case channel 2 (second in position)
+        ADC1->CR2 |= ADC_CR2_ADON; //start conversion (flanco?)
+    		//ADC1->SQR3 = 1; // in the first 5 bits you put the channel # of the channel you want to be converted first, in this case channel 1 (second in position)
+            //ADC1->CR2 |= ADC_CR2_ADON; //start conversion (flanco?)
+
+    		//ADC1->SQR3 = 2; // in the first 5 bits you put the channel # of the channel you want to be converted first, in this case channel 2 (second in position)
+            //ADC1->CR2 |= ADC_CR2_ADON; //start conversion (flanco?)
+
+    		//ADC1->SQR3 = 3; // in the first 5 bits you put the channel # of the channel you want to be converted first, in this case channel 3 (second in position)
+            //ADC1->CR2 |= ADC_CR2_ADON; //start conversion (flanco?)
+
+
+
+	if (ADC1->DR < 2040)
+	{
+    			GPIOC->ODR = 0x0;
+	}
+
+    			if (ADC1->DR > 2040)
+    		    {
+    				if (ADC1->DR < 2100)
+    				{
+    		            	GPIOC->ODR = 0xF;
+    				}
+    			}
+
+
+    			if (ADC1->DR > 2100)
+    			{
+    				GPIOC->ODR = 0xA;
+    			}
+
+    			while (n<100)
+    			{
+    			n  = n + 1;
+    			}
+    			    n = 0;
+
+    			//ADC1->SR = 0; //Status register must be cleared by software
+    			ADC1->CR2 = 0x1; //ADC ON , single mode(cont=0),right alignment (bit 11)
+    			ADC1->SQR3 = 0x2; // in the first 5 bits you put the channel # of the channel you want to be converted first, in this case channel 2 (second in position)
+    			ADC1->CR2 |= ADC_CR2_ADON; //start conversion (flanco?)
+
+
+
+    			if (ADC1->DR < 2000)
+    			{
+    		    			GPIOC->ODR = 0x0;
+    			}
+    			if (ADC1->DR < 2000)
+    			{
+    				GPIOC->ODR = 0x0;
+    			    }
+    			    	if (ADC1->DR > 2000)
+    			    	{
+    			    		if (ADC1->DR < 2050)
+    			    		{
+    			    			GPIOC->ODR = 0xF;
+    			    		}
+    			    	}
+
+
+    			    	if (ADC1->DR > 2050)
+    			    	{
+    			    		GPIOC->ODR = 0x1;
+    			    	}
+
+
+}
+
+
+    		//x = ADC1->DR; //CONVERSION put on x
+    		//GPIOC->ODR = ADC1->DR; //CONVERSION put on PORT C ODR (output data register)
+    		//ADC1->SR = 0; //Status register must be cleared by software
+
+    		//y = ADC1->DR; //CONVERSION put on y
+    		//GPIOC->ODR = ADC1->DR; //CONVERSION put on PORT C ODR (output data register)
+    		//ADC1->SR = 0; //Status register must be cleared by software
+
+    		//z = ADC1->DR; //CONVERSION put on z
+    		//GPIOC->ODR = ADC1->DR; //CONVERSION put on PORT C ODR (output data register)
+    		//ADC1->SR = 0; //Status register must be cleared by software
+
+while (n<100)
+{
+n  = n + 1;
+}
+    n = 0;
+}
+
+
+
+void ADC1_IRQHandler() // ( si hay una interrupcion, entonces...)
+{
+/*	if(ADC1->SR & ADC_SR_EOC) //hace una AND con en bit 1(posicion 2) del registro de estado a ver si ya acabo la conversion, y aunque el resultado no valdria exactamente 1, sino dos, supongo que if lo toma como true.. por lo que supongo que seria: 0 = no se da la condicion. todo lo demas= se da la condecion)
+	{
+
+
+		if(n == 1)
+		{
+
+			GPIOC->ODR = 0x0;
+
+			if (ADC1->DR > 2000)
+		    {
+				if (ADC1->DR < 2100)
+				{
+		            	GPIOC->ODR = 0xF;
+				}
+			}
+
+
+			if (ADC1->DR > 2100)
+			{
+				GPIOC->ODR = 0xA;
+			}
+
+			n = 0;
+		}
+		else {
+
+			GPIOC->ODR = 0x0;
+
+			if (ADC1->DR > 0)
+			{
+				if (ADC1->DR < 2050)
+				{
+						GPIOC->ODR = 0xF;
+				}
+			}
+
+
+			if (ADC1->DR > 2050)
+			{
+				GPIOC->ODR = 0x1;
+			}
+
+			n = n + 1;
+		}
+
+
+		//x = ADC1->DR; //CONVERSION put on x
+		//GPIOC->ODR = ADC1->DR; //CONVERSION put on PORT C ODR (output data register)
+		//ADC1->SR = 0; //Status register must be cleared by software
+
+		//y = ADC1->DR; //CONVERSION put on y
+		//GPIOC->ODR = ADC1->DR; //CONVERSION put on PORT C ODR (output data register)
+		//ADC1->SR = 0; //Status register must be cleared by software
+
+		//z = ADC1->DR; //CONVERSION put on z
+		//GPIOC->ODR = ADC1->DR; //CONVERSION put on PORT C ODR (output data register)
+		//ADC1->SR = 0; //Status register must be cleared by software
+	}
+*/
+	ADC1->SR = 0; //Status register must be cleared by software
+}
